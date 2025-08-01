@@ -5,6 +5,7 @@ import MainView from '@/pages/MainView.vue'
 import MapView from '@/pages/map/MapView.vue'
 import MapTestView from '@/pages/map/MapTestView.vue'
 import MapDiagnostic from '@/pages/map/MapDiagnostic.vue'
+import MapQuickDiagnostic from '@/pages/map/MapQuickDiagnostic.vue'
 
 // 인증 관련 페이지
 import LoginView from '@/pages/auth/LoginView.vue'
@@ -68,6 +69,11 @@ const router = createRouter({
       path: '/map/diagnostic',
       name: 'map-diagnostic',
       component: MapDiagnostic,
+    },
+    {
+      path: '/map/quick-diagnostic',
+      name: 'map-quick-diagnostic',
+      component: MapQuickDiagnostic,
     },
 
     // 인증 관련 라우트
