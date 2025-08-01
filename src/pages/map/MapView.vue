@@ -37,14 +37,40 @@ const filteredProperties = computed(() => mapStore.filteredProperties)
 
 // 카카오 맵 초기화
 const initMap = () => {
-  if (window.kakao && window.kakao.maps) {
+  console.log('🗺️ 지도 초기화 시작...')
+  
+  if (!window.kakao || !window.kakao.maps) {
+    console.error('❌ 카카오 맵 라이브러리가 없습니다')
+    return
+  }
+
+  if (!mapContainer.value) {
+    console.error('❌ 지도 컨테이너 요소를 찾을 수 없습니다')
+    return
+  }
+
+  try {
     const container = mapContainer.value
     const options = {
       center: new window.kakao.maps.LatLng(mapStore.mapCenter.lat, mapStore.mapCenter.lng),
       level: mapStore.mapLevel
     }
     
+    console.log('🎯 지도 중심 좌표:', mapStore.mapCenter)
+    console.log('📏 지도 레벨:', mapStore.mapLevel)
+    
     map.value = new window.kakao.maps.Map(container, options)
+    
+    console.log('✅ 카카오 맵 생성 성공!')
+    
+    // 지도 로드 완료 이벤트
+    window.kakao.maps.event.addListener(map.value, 'tilesloaded', () => {
+      console.log('🎊 지도 타일 로딩 완료!')
+    })
+    
+  } catch (error) {
+    console.error('❌ 지도 생성 중 에러:', error)
+    alert(`지도 생성에 실패했습니다: ${error.message}`)
   }
 }
 
@@ -122,23 +148,61 @@ const applyFilters = () => {
 
 // 초기화 함수
 const initializeKakaoMap = () => {
+  console.log('🗺️ 카카오 맵 초기화 시작...')
+  
+  // 카카오 맵 API 키 확인
+  const KAKAO_API_KEY = import.meta.env.VITE_KAKAO_MAP_API_KEY || 'YOUR_APP_KEY'
+  console.log('🔑 카카오 API 키:', KAKAO_API_KEY ? `${KAKAO_API_KEY.substring(0, 10)}...` : '없음')
+  
+  if (!KAKAO_API_KEY || KAKAO_API_KEY === 'YOUR_APP_KEY') {
+    console.error('❌ 카카오 맵 API 키가 설정되지 않았습니다!')
+    alert('카카오 맵 API 키를 .env 파일에 설정해주세요.\nVITE_KAKAO_MAP_API_KEY=your_api_key')
+    return
+  }
+
   if (window.kakao && window.kakao.maps) {
+    console.log('✅ 카카오 맵 스크립트가 이미 로드됨')
     window.kakao.maps.load(() => {
+      console.log('✅ 카카오 맵 라이브러리 로드 완료')
       initMap()
       loadProperties()
     })
   } else {
-    // 카카오 맵 스크립트 로드 (환경변수에서 API 키를 가져옵니다)
-    const KAKAO_API_KEY = import.meta.env.VITE_KAKAO_MAP_API_KEY || 'YOUR_APP_KEY'
+    console.log('📦 카카오 맵 스크립트 로딩 중...')
+    
+    // 기존 스크립트 제거 (중복 방지)
+    const existingScript = document.querySelector('script[src*="dapi.kakao.com"]')
+    if (existingScript) {
+      existingScript.remove()
+      console.log('🗑️ 기존 카카오 맵 스크립트 제거')
+    }
+    
     const script = document.createElement('script')
     script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_API_KEY}&autoload=false`
+    script.async = true
+    
     script.onload = () => {
-      window.kakao.maps.load(() => {
-        initMap()
-        loadProperties()
-      })
+      console.log('✅ 카카오 맵 스크립트 로드 성공')
+      
+      if (window.kakao && window.kakao.maps) {
+        window.kakao.maps.load(() => {
+          console.log('✅ 카카오 맵 라이브러리 로드 완료')
+          initMap()
+          loadProperties()
+        })
+      } else {
+        console.error('❌ 카카오 맵 객체를 찾을 수 없습니다')
+        alert('카카오 맵 로딩에 실패했습니다. API 키를 확인해주세요.')
+      }
     }
+    
+    script.onerror = (error) => {
+      console.error('❌ 카카오 맵 스크립트 로드 실패:', error)
+      alert('카카오 맵 스크립트 로딩에 실패했습니다.\n1. API 키 확인\n2. 네트워크 연결 확인\n3. 도메인 등록 확인')
+    }
+    
     document.head.appendChild(script)
+    console.log('📤 카카오 맵 스크립트 DOM에 추가됨')
   }
 }
 
@@ -162,7 +226,23 @@ watch(() => mapStore.filteredProperties, (newProperties) => {
 }, { deep: true })
 
 onMounted(() => {
-  initializeKakaoMap()
+  console.log('🚀 MapView 컴포넌트 마운트됨')
+  
+  // 컨테이너 확인
+  setTimeout(() => {
+    if (mapContainer.value) {
+      const rect = mapContainer.value.getBoundingClientRect()
+      console.log('📐 지도 컨테이너 크기:', {
+        width: rect.width,
+        height: rect.height,
+        visible: rect.width > 0 && rect.height > 0
+      })
+    } else {
+      console.error('❌ 지도 컨테이너를 찾을 수 없습니다')
+    }
+    
+    initializeKakaoMap()
+  }, 100) // DOM 렌더링 후 실행
 })
 </script>
 
@@ -451,6 +531,8 @@ onMounted(() => {
   width: 100%;
   height: 100%;
   position: relative;
+  min-height: 400px; /* 최소 높이 보장 */
+  background: #f0f0f0; /* 배경색으로 컨테이너 확인 가능 */
 }
 
 .loading-overlay {
