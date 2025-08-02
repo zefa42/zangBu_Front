@@ -31,6 +31,8 @@ const router = useRouter()
 // 상세 보기 상태
 const showDetail = ref(false)
 const selectedProperty = ref(null)
+const propertyDetail = ref(null)
+const isLoadingDetail = ref(false)
 
 // 지도 관련
 const mapContainer = ref(null)
@@ -454,15 +456,46 @@ const goToUpload = () => {
 }
 
 // 매물 상세 보기 표시
-const showPropertyDetail = (property) => {
+const showPropertyDetail = async (property) => {
   selectedProperty.value = property
   showDetail.value = true
+  isLoadingDetail.value = true
+
+  try {
+    // API 호출하여 상세 정보 가져오기
+    const response = await fetch('/api/building', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        buildingId: property.buildingId || '',
+        searchGbn: '1',
+        complexNo: property.complexNo || '1171010900120333000',
+        dong: property.dong || '',
+        ho: property.ho || '',
+      }),
+    })
+
+    if (response.ok) {
+      const data = await response.json()
+      propertyDetail.value = data.data
+    } else {
+      console.error('매물 상세 정보 조회 실패')
+    }
+  } catch (error) {
+    console.error('매물 상세 정보 조회 중 오류:', error)
+  } finally {
+    isLoadingDetail.value = false
+  }
 }
 
 // 상세 보기 닫기
 const closePropertyDetail = () => {
   showDetail.value = false
   selectedProperty.value = null
+  propertyDetail.value = null
 }
 
 // 채팅 페이지로 이동
@@ -658,143 +691,153 @@ onMounted(() => {
 
       <!-- 매물 상세 보기 사이드바 (왼쪽에 표시) -->
       <div class="detail-sidebar-left" v-if="showDetail && selectedProperty">
+        <!-- 로딩 상태 -->
+        <div v-if="isLoadingDetail" class="loading-overlay">
+          <div class="loading-spinner">매물 정보를 불러오는 중...</div>
+        </div>
+
         <!-- 헤더 -->
         <div class="detail-header">
           <button class="back-btn" @click="closePropertyDetail">
             <span class="back-icon">←</span>
           </button>
-          <h2 class="detail-title">{{ selectedProperty.building_name }}</h2>
+          <h2 class="detail-title">
+            {{ propertyDetail?.resComplexName || selectedProperty.building_name }}
+          </h2>
           <div class="header-actions">
-            <button class="action-btn" title="찜하기">❤️</button>
-            <button class="action-btn" title="알림">🔔</button>
+            <button
+              class="action-btn"
+              :class="{ active: propertyDetail?.isBookmarked }"
+              title="찜하기"
+            >
+              ❤️
+            </button>
+            <button
+              class="action-btn"
+              :class="{ active: propertyDetail?.isNotification }"
+              title="알림"
+            >
+              🔔
+            </button>
           </div>
         </div>
 
         <!-- 매물 정보 섹션 -->
-        <div class="detail-section">
+        <div class="detail-section" v-if="propertyDetail">
           <h3 class="section-title">
             <span class="section-icon">🏠</span>
             매물 정보
           </h3>
           <div class="info-grid">
             <div class="info-item">
-              <span class="info-label">등록자 유형</span>
-              <span class="info-value">집주인</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">매매 종류</span>
-              <span class="info-value">{{ selectedProperty.saleType }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">부동산 종류</span>
-              <span class="info-value">{{ selectedProperty.propertyType }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">면적</span>
-              <span class="info-value">84.5㎡</span>
+              <span class="info-label">거래 유형</span>
+              <span class="info-value">{{ propertyDetail.resType }}</span>
             </div>
             <div class="info-item">
               <span class="info-label">도로명 주소</span>
-              <span class="info-value">{{ selectedProperty.address }}</span>
+              <span class="info-value">{{ propertyDetail.commAddrRoadName }}</span>
             </div>
             <div class="info-item">
-              <span class="info-label">층수</span>
-              <span class="info-value">지하 3층 ~ 지상 25층</span>
+              <span class="info-label">지번 주소</span>
+              <span class="info-value">{{ propertyDetail.commAddrLotNumber }}</span>
             </div>
             <div class="info-item">
-              <span class="info-label">상세 주소</span>
-              <span class="info-value">101동 1001호</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">난방</span>
-              <span class="info-value">지역난방</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">준공일자</span>
-              <span class="info-value">2019년 12월</span>
+              <span class="info-label">동수</span>
+              <span class="info-value">{{ propertyDetail.resDongCnt }}동</span>
             </div>
             <div class="info-item">
               <span class="info-label">세대수</span>
-              <span class="info-value">1200세대</span>
+              <span class="info-value">{{ propertyDetail.resCompositionCnt }}세대</span>
             </div>
             <div class="info-item">
-              <span class="info-label">관리비</span>
-              <span class="info-value">월 15만원 (관리비)</span>
+              <span class="info-label">준공일자</span>
+              <span class="info-value">{{ propertyDetail.resApprovalDate }}</span>
             </div>
             <div class="info-item">
-              <span class="info-label">주차</span>
-              <span class="info-value">세대당 1.2대</span>
+              <span class="info-label">난방</span>
+              <span class="info-value">{{ propertyDetail.resHeatingSystem }}</span>
             </div>
             <div class="info-item">
-              <span class="info-label">입주 가능 날짜</span>
-              <span class="info-value">즉시 입주 가능</span>
+              <span class="info-label">주변 시설</span>
+              <span class="info-value">{{ propertyDetail.resFacility }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">공인중개사</span>
+              <span class="info-value">{{ propertyDetail.resRealty }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">연락처</span>
+              <span class="info-value">{{ propertyDetail.resTelNo }}</span>
             </div>
           </div>
         </div>
 
-        <!-- 시세 그래프 섹션 -->
-        <div class="detail-section">
+        <!-- 시세 정보 섹션 -->
+        <div class="detail-section" v-if="propertyDetail?.resAreaPriceList?.length">
           <h3 class="section-title">
             <span class="section-icon">📈</span>
-            시세 그래프
+            시세 정보
           </h3>
-          <div class="graph-controls">
-            <select class="graph-select">
-              <option>매매</option>
-            </select>
-            <select class="graph-select">
-              <option>전월세</option>
-            </select>
-            <select class="graph-select">
-              <option>32평</option>
-            </select>
-            <select class="graph-select">
-              <option>최근 3년</option>
-            </select>
-          </div>
-          <div class="graph-placeholder">
-            <div class="graph-area">
-              <div class="graph-line"></div>
-              <div class="graph-labels">
-                <span>01</span>
-                <span>03</span>
-                <span>06</span>
-                <span>09</span>
-                <span>12</span>
-                <span>15</span>
-                <span>18</span>
+          <div class="price-list">
+            <div
+              v-for="(priceInfo, index) in propertyDetail.resAreaPriceList"
+              :key="index"
+              class="price-item"
+            >
+              <div class="price-header">
+                <span class="area-info">{{ priceInfo.resArea }}㎡</span>
+                <span class="composition-info">{{ priceInfo.resCompositionCnt }}세대</span>
               </div>
-            </div>
-            <div class="price-info">
-              <div class="current-price">
-                <span class="price-label">현재 매매 시세</span>
-                <span class="price-value">{{ generatePropertyInfo(selectedProperty) }}</span>
-              </div>
-              <div class="price-change">
-                <span class="change-label">전월 대비</span>
-                <span class="change-value positive">+0.4억</span>
+              <div class="price-details">
+                <div class="price-row">
+                  <span class="price-type">매매</span>
+                  <span class="price-range"
+                    >{{ priceInfo.resLowerAveragePrice }}~{{
+                      priceInfo.resTopAveragePrice
+                    }}만원</span
+                  >
+                </div>
+                <div class="price-row">
+                  <span class="price-type">전세</span>
+                  <span class="price-range"
+                    >{{ priceInfo.resLowerAveragePrice1 }}~{{
+                      priceInfo.resTopAveragePrice1
+                    }}만원</span
+                  >
+                </div>
+                <div v-if="priceInfo.resMonthlyRent" class="price-row">
+                  <span class="price-type">월세</span>
+                  <span class="price-range"
+                    >보증금 {{ priceInfo.resSuretyAmt }}만원 / 월세
+                    {{ priceInfo.resMonthlyRent }}만원</span
+                  >
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         <!-- 매물 설명 섹션 -->
-        <div class="detail-section">
+        <div class="detail-section" v-if="propertyDetail">
           <h3 class="section-title">매물 설명</h3>
           <div class="description-content">
-            <div class="desc-item">
+            <div class="desc-item" v-if="propertyDetail.infoOneline">
               <h4 class="desc-title">한 줄 소개</h4>
-              <p class="desc-text">강남 중심부에 위치한 넓고 쾌적한 아파트</p>
+              <p class="desc-text">{{ propertyDetail.infoOneline }}</p>
             </div>
-            <div class="desc-item">
+            <div class="desc-item" v-if="propertyDetail.title">
               <h4 class="desc-title">매물 제목</h4>
-              <p class="desc-text">강남 중심부에 위치한 넓고 쾌적한 아파트</p>
+              <p class="desc-text">{{ propertyDetail.title }}</p>
             </div>
-            <div class="desc-item">
+            <div class="desc-item" v-if="propertyDetail.infoBuilding">
               <h4 class="desc-title">매물 설명</h4>
-              <p class="desc-text">강남 중심부에 위치한 넓고 쾌적한 아파트</p>
+              <p class="desc-text">{{ propertyDetail.infoBuilding }}</p>
             </div>
-            <div class="desc-item">
+            <div class="desc-item" v-if="propertyDetail.imageUrl">
+              <h4 class="desc-title">매물 사진</h4>
+              <img :src="propertyDetail.imageUrl" alt="매물 사진" class="property-image" />
+            </div>
+            <div class="desc-item" v-else>
               <h4 class="desc-title">매물 사진</h4>
               <p class="desc-text">사진이 없습니다.</p>
             </div>
@@ -802,22 +845,25 @@ onMounted(() => {
         </div>
 
         <!-- 담당자 정보 섹션 -->
-        <div class="detail-section">
+        <div
+          class="detail-section"
+          v-if="propertyDetail?.contactName || propertyDetail?.contactPhone"
+        >
           <h3 class="section-title agent-title">담당자 정보</h3>
           <div class="agent-info">
-            <div class="agent-item">
+            <div class="agent-item" v-if="propertyDetail.contactName">
               <span class="agent-label">담당자 이름</span>
-              <span class="agent-value">김철수</span>
+              <span class="agent-value">{{ propertyDetail.contactName }}</span>
             </div>
-            <div class="agent-item">
+            <div class="agent-item" v-if="propertyDetail.contactPhone">
               <span class="agent-label">연락처</span>
-              <span class="agent-value">010-1234-5678</span>
+              <span class="agent-value">{{ propertyDetail.contactPhone }}</span>
             </div>
           </div>
         </div>
 
         <!-- 거주자 리뷰 섹션 -->
-        <div class="detail-section">
+        <div class="detail-section" v-if="propertyDetail?.review?.length">
           <div class="review-header">
             <h3 class="section-title">
               <span class="star-icon">☆</span>
@@ -826,57 +872,27 @@ onMounted(() => {
             <button class="more-btn" @click="goToReviewList">→</button>
           </div>
           <div class="review-list">
-            <div class="review-item">
+            <div
+              v-for="review in propertyDetail.review.slice(0, 3)"
+              :key="review.reviewId"
+              class="review-item"
+            >
               <div class="review-header-info">
-                <span class="reviewer-name">김**</span>
+                <span class="reviewer-name">{{ review.reviewerNickname }}</span>
                 <div class="star-rating">
-                  <span class="star filled">★</span>
-                  <span class="star filled">★</span>
-                  <span class="star filled">★</span>
-                  <span class="star filled">★</span>
-                  <span class="star">★</span>
+                  <span
+                    v-for="i in 5"
+                    :key="i"
+                    class="star"
+                    :class="{ filled: i <= parseFloat(review.rank) }"
+                  >
+                    ★
+                  </span>
                 </div>
               </div>
-              <p class="review-text">교통이 편리하고 주변 상권이 잘 발달되어 있어요.</p>
+              <p class="review-text">{{ review.content }}</p>
               <div class="review-footer">
-                <span class="helpful-count">도움됨 12</span>
-                <span class="review-date">2024-11-15</span>
-              </div>
-            </div>
-
-            <div class="review-item">
-              <div class="review-header-info">
-                <span class="reviewer-name">이**</span>
-                <div class="star-rating">
-                  <span class="star filled">★</span>
-                  <span class="star filled">★</span>
-                  <span class="star filled">★</span>
-                  <span class="star filled">★</span>
-                  <span class="star filled">★</span>
-                </div>
-              </div>
-              <p class="review-text">신축이라 시설이 깔끔하고 좋아요.</p>
-              <div class="review-footer">
-                <span class="helpful-count">도움됨 8</span>
-                <span class="review-date">2024-10-28</span>
-              </div>
-            </div>
-
-            <div class="review-item">
-              <div class="review-header-info">
-                <span class="reviewer-name">박**</span>
-                <div class="star-rating">
-                  <span class="star filled">★</span>
-                  <span class="star filled">★</span>
-                  <span class="star filled">★</span>
-                  <span class="star">★</span>
-                  <span class="star">★</span>
-                </div>
-              </div>
-              <p class="review-text">위치는 좋지만 관리비가 조금 비싼 편이에요.</p>
-              <div class="review-footer">
-                <span class="helpful-count">도움됨 5</span>
-                <span class="review-date">2024-10-10</span>
+                <span class="review-date">{{ review.createdAt }}</span>
               </div>
             </div>
           </div>
@@ -1340,6 +1356,10 @@ onMounted(() => {
   background: #e9ecef;
 }
 
+.action-btn.active {
+  color: #4caf50;
+}
+
 .detail-section {
   padding: 20px;
   border-bottom: 1px solid #e0e0e0;
@@ -1631,6 +1651,76 @@ onMounted(() => {
 .helpful-count {
   color: #4caf50;
   font-weight: 500;
+}
+
+/* 시세 정보 스타일 */
+.price-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.price-item {
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.price-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.area-info {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+}
+
+.composition-info {
+  font-size: 14px;
+  color: #666;
+}
+
+.price-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.price-type {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  min-width: 60px;
+}
+
+.price-range {
+  font-size: 14px;
+  color: #4caf50;
+  font-weight: 500;
+  text-align: right;
+}
+
+/* 매물 이미지 스타일 */
+.property-image {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  border-radius: 8px;
+  margin-top: 8px;
 }
 
 /* 액션 버튼 스타일 */
