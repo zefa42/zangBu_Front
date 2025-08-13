@@ -84,10 +84,35 @@ const displayMarkers = (mapData) => {
   mapData.forEach((property) => {
     const position = new window.kakao.maps.LatLng(property.lat, property.lng)
 
-    // 마커 생성
+    // 호갱노노 스타일 집 모양 아이콘 생성
+    const houseIcon = new window.kakao.maps.MarkerImage(
+      'data:image/svg+xml;base64,' +
+        btoa(`
+        <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="1" dy="1" stdDeviation="1" flood-color="rgba(0,0,0,0.2)"/>
+            </filter>
+          </defs>
+          <path d="M16 2L2 12v18h28V12L16 2z" fill="#4A90E2" stroke="#357ABD" stroke-width="1" filter="url(#shadow)"/>
+          <rect x="12" y="18" width="8" height="8" fill="#357ABD"/>
+          <rect x="14" y="20" width="4" height="4" fill="#4A90E2"/>
+          <path d="M8 12h4v6H8z" fill="#357ABD"/>
+          <path d="M20 12h4v6h-4z" fill="#357ABD"/>
+          <rect x="14" y="8h4v4h-4z" fill="#357ABD"/>
+        </svg>
+      `),
+      new window.kakao.maps.Size(32, 32),
+      {
+        offset: new window.kakao.maps.Point(16, 32),
+      }
+    )
+
+    // 마커 생성 (호갱노노 스타일 집 모양 아이콘 사용)
     const marker = new window.kakao.maps.Marker({
       position: position,
       map: map.value,
+      image: houseIcon,
     })
 
     // 인포윈도우 생성
@@ -146,6 +171,38 @@ const displayMarkers = (mapData) => {
           </button>
         </div>
       `,
+    })
+
+    // 마커 호버 효과 (마우스 오버 시 아이콘 확대)
+    window.kakao.maps.event.addListener(marker, 'mouseover', () => {
+      const hoverIcon = new window.kakao.maps.MarkerImage(
+        'data:image/svg+xml;base64,' +
+          btoa(`
+            <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feDropShadow dx="1" dy="1" stdDeviation="1" flood-color="rgba(0,0,0,0.2)"/>
+                </filter>
+              </defs>
+              <path d="M20 2.5L2.5 15v22.5h35V15L20 2.5z" fill="#4A90E2" stroke="#357ABD" stroke-width="1.25" filter="url(#shadow)"/>
+              <rect x="15" y="22.5" width="10" height="10" fill="#357ABD"/>
+              <rect x="17.5" y="25" width="5" height="5" fill="#4A90E2"/>
+              <path d="M10 15h5v7.5H10z" fill="#357ABD"/>
+              <path d="M25 15h5v7.5h-5z" fill="#357ABD"/>
+              <rect x="17.5" y="10h5v5h-5z" fill="#357ABD"/>
+            </svg>
+          `),
+        new window.kakao.maps.Size(40, 40),
+        {
+          offset: new window.kakao.maps.Point(20, 40),
+        }
+      )
+      marker.setImage(hoverIcon)
+    })
+
+    // 마커 호버 효과 (마우스 아웃 시 아이콘 원래 크기)
+    window.kakao.maps.event.addListener(marker, 'mouseout', () => {
+      marker.setImage(houseIcon)
     })
 
     // 마커 클릭 이벤트
@@ -244,6 +301,8 @@ const sampleProperties = [
     propertyType: '아파트',
     price: 1500000000,
     deposit: 0,
+    lat: 37.4981,
+    lng: 127.0276,
     isBookmarked: false,
     isNotification: false,
   },
@@ -255,6 +314,8 @@ const sampleProperties = [
     propertyType: '오피스텔',
     price: 800000000,
     deposit: 0,
+    lat: 37.5519,
+    lng: 126.9251,
     isBookmarked: false,
     isNotification: false,
   },
@@ -266,6 +327,8 @@ const sampleProperties = [
     propertyType: '아파트',
     price: 1200000000,
     deposit: 0,
+    lat: 37.5704,
+    lng: 126.991,
     isBookmarked: true,
     isNotification: true,
   },
@@ -279,6 +342,8 @@ const sampleProperties = [
     propertyType: '아파트',
     price: 0,
     deposit: 500000000,
+    lat: 37.5219,
+    lng: 126.9244,
     isBookmarked: false,
     isNotification: false,
   },
@@ -290,6 +355,8 @@ const sampleProperties = [
     propertyType: '아파트',
     price: 0,
     deposit: 300000000,
+    lat: 37.5447,
+    lng: 127.0559,
     isBookmarked: false,
     isNotification: false,
   },
@@ -301,6 +368,8 @@ const sampleProperties = [
     propertyType: '아파트',
     price: 0,
     deposit: 400000000,
+    lat: 37.5002,
+    lng: 127.0276,
     isBookmarked: false,
     isNotification: false,
   },
@@ -314,6 +383,8 @@ const sampleProperties = [
     propertyType: '빌라',
     price: 50000000,
     deposit: 10000000,
+    lat: 37.4837,
+    lng: 127.0324,
     isBookmarked: false,
     isNotification: false,
   },
@@ -325,6 +396,8 @@ const sampleProperties = [
     propertyType: '오피스텔',
     price: 80000000,
     deposit: 5000000,
+    lat: 37.5492,
+    lng: 126.9055,
     isBookmarked: false,
     isNotification: false,
   },
@@ -336,6 +409,8 @@ const sampleProperties = [
     propertyType: '주택',
     price: 120000000,
     deposit: 20000000,
+    lat: 37.5201,
+    lng: 127.0479,
     isBookmarked: false,
     isNotification: false,
   },
@@ -349,6 +424,8 @@ const sampleProperties = [
     propertyType: '아파트',
     price: 2000000000,
     deposit: 0,
+    lat: 37.5139,
+    lng: 127.1006,
     isBookmarked: false,
     isNotification: false,
   },
@@ -360,6 +437,8 @@ const sampleProperties = [
     propertyType: '오피스텔',
     price: 0,
     deposit: 200000000,
+    lat: 37.5446,
+    lng: 127.0559,
     isBookmarked: false,
     isNotification: false,
   },
@@ -371,6 +450,8 @@ const sampleProperties = [
     propertyType: '빌라',
     price: 30000000,
     deposit: 15000000,
+    lat: 37.5344,
+    lng: 126.9944,
     isBookmarked: false,
     isNotification: false,
   },
