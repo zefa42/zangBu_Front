@@ -82,3 +82,4 @@ export const usePriceStore = defineStore('price', () => {
     clearData
   }
 })
+
