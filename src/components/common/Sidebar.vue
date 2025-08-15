@@ -1,13 +1,15 @@
 <template>
+  <!-- 사이드바가 열려있을 때만 표시 -->
   <aside
+    v-if="isOpen"
     :class="[
       'bg-white shadow-lg',
-      // 데스크탑에서는 absolute, 모바일에서는 fixed
-      'lg:absolute lg:top-24 lg:right-0 lg:w-full lg:h-auto lg:z-40',
+      // 데스크탑에서는 absolute로 헤더 아래에 오버레이, 모바일에서는 오른쪽에서 슬라이드
+      'lg:absolute lg:top-24 lg:right-0 lg:w-full lg:h-auto lg:z-50 lg:shadow-xl lg:border lg:border-gray-200',
       'fixed top-0 right-0 w-80 h-screen z-50',
       // 데스크탑에서는 애니메이션 없음, 모바일에서는 transition 적용
       'lg:transition-none transition-all duration-300',
-      // 데스크탑에서는 애니메이션 없음, 모바일에서는 오른쪽에서 왼쪽으로
+      // 데스크탑에서는 항상 보임, 모바일에서는 오른쪽에서 왼쪽으로
       isOpen ? 'lg:translate-y-0 translate-x-0' : 'lg:translate-y-0 translate-x-full',
     ]"
   >
@@ -36,7 +38,7 @@
       <!-- 데스크탑에서는 가로 배치, 모바일에서는 세로 배치 -->
       <ul
         :class="[
-          'lg:flex lg:flex-row lg:justify-center lg:space-x-8 lg:space-y-0 lg:border-b-0',
+          'lg:flex lg:flex-row lg:justify-center lg:space-x-6 lg:space-y-0 lg:border-b-0 lg:py-3 lg:px-4',
           'space-y-0',
         ]"
       >
@@ -45,7 +47,7 @@
           <li v-for="(item, index) in typeAMenuItems" :key="index">
             <button
               @click="handleMenuClick(item)"
-              class="w-full text-left px-4 py-3 text-gray-800 hover:bg-gray-50 transition-colors duration-200 flex items-center lg:justify-center"
+              class="w-full text-left px-4 py-3 text-gray-800 hover:bg-gray-50 transition-colors duration-200 flex items-center lg:justify-center lg:px-4 lg:py-2 lg:hover:bg-transparent lg:hover:text-brand-1 lg:whitespace-nowrap"
             >
               <span class="text-base">{{ item.label }}</span>
             </button>
@@ -61,7 +63,7 @@
           <li v-for="(item, index) in typeBMenuItems" :key="index">
             <button
               @click="handleMenuClick(item)"
-              class="w-full text-left px-4 py-3 text-gray-800 hover:bg-gray-50 transition-colors duration-200 flex items-center lg:justify-center"
+              class="w-full text-left px-4 py-3 text-gray-800 hover:bg-gray-50 transition-colors duration-200 flex items-center lg:justify-center lg:px-4 lg:py-2 lg:hover:bg-transparent lg:hover:text-brand-1 lg:whitespace-nowrap"
             >
               <span class="text-base">{{ item.label }}</span>
             </button>
@@ -112,15 +114,6 @@ const emit = defineEmits(['close', 'menu-click'])
 
 // Auth store 사용
 const authStore = useAuthStore()
-
-// 로그인 상태 확인 (더미로 로그아웃 상태)
-const isLoggedIn = computed(() => {
-  // 유저 스토어 구현이 덜 되어있으므로 하드코딩으로 로그아웃 상태
-  return false
-
-  // TODO: 유저 스토어 구현 완료 후 아래 주석 해제하여 사용
-  // return authStore.isAuthenticated
-})
 
 // 타입 A 메뉴 아이템 (왼쪽 패널)
 const typeAMenuItems = computed(() => {

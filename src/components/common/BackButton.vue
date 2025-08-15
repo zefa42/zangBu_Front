@@ -25,7 +25,7 @@ onUnmounted(() => {
 <template>
   <div
     v-show="showBackButton"
-    class="fixed top-20 lg:top-24 left-4 z-50 transition-all duration-300 ease-in-out"
+    class="fixed bottom-20 lg:bottom-24 left-4 z-50 transition-all duration-300 ease-in-out"
     :class="showBackButton ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'"
   >
     <button

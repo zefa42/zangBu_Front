@@ -27,7 +27,7 @@ export const findPassword = (email) => {
 
 // 토큰 갱신
 export const refreshToken = () => {
-  return api.post('/auth/refresh')
+  return api.post('/auth/reissue')
 }
 
 // 사용자 정보 조회

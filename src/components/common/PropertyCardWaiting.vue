@@ -34,7 +34,7 @@
       <h3 class="property-title">{{ property.buildingName || '스카이빌' }}</h3>
 
       <div class="price-info">
-        <span class="price-text">{{ property.price || '₩750,000,000' }}</span>
+        <span class="price-text">{{ property.price || '750,000,000' }}</span>
       </div>
 
       <div class="location-info">
@@ -75,9 +75,11 @@
         <button
           v-if="property.dealStatusEnum !== 'CLOSE_DEAL'"
           @click="handleEdit"
-          class="primary-button"
+          :disabled="isWaitingForAcceptance"
+          :class="['primary-button', { 'disabled-button': isWaitingForAcceptance }]"
+          :title="getButtonTooltip()"
         >
-          거래 이어가기
+          {{ getButtonText() }}
         </button>
         <button
           v-if="property.dealStatusEnum !== 'CLOSE_DEAL'"
@@ -106,7 +108,7 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits } from 'vue'
+import { defineProps, defineEmits, computed } from 'vue'
 
 const props = defineProps({
   property: {
@@ -131,13 +133,58 @@ const props = defineProps({
 
 const emit = defineEmits(['edit', 'cancel', 'viewDetails', 'review'])
 
-// 거래 상태에 따른 텍스트 반환
+// 수락 대기 상태인지 확인
+const isWaitingForAcceptance = computed(() => {
+  const { dealStatusEnum, userRole } = props.property
+
+  // 판매자: BEFORE_CONSUMER 상태일 때 비활성화 (구매자 수락 대기)
+  if (userRole === 'seller' && dealStatusEnum === 'BEFORE_CONSUMER') {
+    return true
+  }
+
+  // 구매자: BEFORE_OWNER 상태일 때 비활성화 (판매자 수락 대기)
+  if ((userRole === 'consumer' || userRole === 'buyer') && dealStatusEnum === 'BEFORE_OWNER') {
+    return true
+  }
+
+  return false
+})
+
+// 버튼 텍스트 반환
+const getButtonText = () => {
+  if (isWaitingForAcceptance.value) {
+    return '수락 대기중'
+  }
+  return '거래 이어가기'
+}
+
+// 버튼 툴팁 반환
+const getButtonTooltip = () => {
+  if (isWaitingForAcceptance.value) {
+    const { userRole, dealStatusEnum } = props.property
+
+    // 판매자: BEFORE_CONSUMER 상태일 때
+    if (userRole === 'seller' && dealStatusEnum === 'BEFORE_CONSUMER') {
+      return '구매자의 수락을 기다리는 중입니다'
+    }
+
+    // 구매자: BEFORE_OWNER 상태일 때
+    if ((userRole === 'consumer' || userRole === 'buyer') && dealStatusEnum === 'BEFORE_OWNER') {
+      return '판매자의 수락을 기다리는 중입니다'
+    }
+  }
+  return '거래를 이어가려면 클릭하세요'
+}
+
+// 거래 상태에 따른 텍스트 반환 (사용자 역할 고려)
 const getStatusText = (dealStatus) => {
+  const userRole = props.property.userRole
+
   switch (dealStatus) {
     case 'BEFORE_OWNER':
-      return '판매자 수락 전'
+      return userRole === 'seller' ? '구매자 수락 대기' : '판매자 수락 대기'
     case 'BEFORE_CONSUMER':
-      return '구매자 수락 전'
+      return userRole === 'seller' ? '구매자 수락 대기' : '구매자 수락 대기'
     case 'MIDDLE_DEAL':
       return '거래 중'
     case 'CLOSE_DEAL':
@@ -147,13 +194,19 @@ const getStatusText = (dealStatus) => {
   }
 }
 
-// 거래 상태에 따른 설명 반환
+// 거래 상태에 따른 설명 반환 (사용자 역할 고려)
 const getStatusDescription = (dealStatus) => {
+  const userRole = props.property.userRole
+
   switch (dealStatus) {
     case 'BEFORE_OWNER':
-      return '판매자의 수락을 기다리는 중입니다'
+      return userRole === 'seller'
+        ? '구매자의 수락을 기다리는 중입니다'
+        : '판매자의 수락을 기다리는 중입니다'
     case 'BEFORE_CONSUMER':
-      return '구매자의 수락을 기다리는 중입니다'
+      return userRole === 'seller'
+        ? '구매자의 수락을 기다리는 중입니다'
+        : '구매자의 수락을 기다리는 중입니다'
     case 'MIDDLE_DEAL':
       return '거래가 진행 중입니다. 서류를 준비해주세요'
     case 'CLOSE_DEAL':
@@ -179,13 +232,15 @@ const getProgressWidth = (dealStatus) => {
   }
 }
 
-// 거래 상태에 따른 진행 텍스트 반환
+// 거래 상태에 따른 진행 텍스트 반환 (사용자 역할 고려)
 const getProgressText = (dealStatus) => {
+  const userRole = props.property.userRole
+
   switch (dealStatus) {
     case 'BEFORE_OWNER':
-      return '판매자 수락 대기 중...'
+      return userRole === 'seller' ? '구매자 수락 대기 중...' : '판매자 수락 대기 중...'
     case 'BEFORE_CONSUMER':
-      return '구매자 수락 대기 중...'
+      return userRole === 'seller' ? '구매자 수락 대기 중...' : '구매자 수락 대기 중...'
     case 'MIDDLE_DEAL':
       return '거래 진행 중...'
     case 'CLOSE_DEAL':
@@ -245,6 +300,12 @@ const getStatusIcon = (dealStatus) => {
 
 // Handle edit
 const handleEdit = () => {
+  // 수락 대기 상태일 때는 클릭 방지
+  if (isWaitingForAcceptance.value) {
+    console.log('수락 대기 중 - 클릭 불가')
+    return
+  }
+
   console.log('=== PropertyCardWaiting handleEdit ===')
   console.log('Emitting edit event with property:', props.property)
   emit('edit', props.property)
@@ -529,6 +590,20 @@ const handleReview = () => {
 
 .primary-button:hover {
   background: var(--brand-2);
+}
+
+/* 비활성화된 버튼 스타일 */
+.primary-button.disabled-button {
+  background: var(--bg-1);
+  color: var(--text-2);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.primary-button.disabled-button:hover {
+  background: var(--bg-1);
+  color: var(--text-2);
+  cursor: not-allowed;
 }
 
 .secondary-button {

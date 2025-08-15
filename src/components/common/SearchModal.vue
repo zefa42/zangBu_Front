@@ -42,42 +42,48 @@
               <i class="fas fa-times"></i>
             </button>
           </div>
+          <!-- 검색 버튼 -->
+          <button
+            @click="handleSearch"
+            :disabled="!searchQuery.trim()"
+            class="w-full mt-3 bg-brand-1 text-white py-3 px-4 rounded-lg font-medium hover:bg-brand-2 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+          >
+            검색하기
+          </button>
         </div>
       </div>
 
       <!-- Search Results or Recent Searches -->
       <div class="px-4 pb-4">
-        <div v-if="searchQuery && searchResults.length > 0" class="space-y-2">
-          <h4 class="text-sm font-medium text-gray-700 mb-2">검색 결과</h4>
-          <div
-            v-for="result in searchResults"
-            :key="result.id"
-            class="p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
-            @click="selectResult(result)"
-          >
-            <div class="font-medium text-gray-900">{{ result.title }}</div>
-            <div class="text-sm text-gray-600">{{ result.description }}</div>
+        <div v-if="!searchQuery && recentSearches.length > 0" class="space-y-2">
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="text-sm font-medium text-gray-700">최근 검색</h4>
+            <button
+              @click="clearAllRecentSearches"
+              class="text-xs text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              전체 삭제
+            </button>
           </div>
-        </div>
-
-        <div v-else-if="!searchQuery && recentSearches.length > 0" class="space-y-2">
-          <h4 class="text-sm font-medium text-gray-700 mb-2">최근 검색</h4>
           <div
-            v-for="search in recentSearches"
-            :key="search"
-            class="p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+            v-for="(search, index) in recentSearches"
+            :key="index"
+            class="p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors group"
             @click="selectRecentSearch(search)"
           >
-            <div class="flex items-center">
-              <i class="fas fa-history text-gray-400 mr-2"></i>
-              <span class="text-gray-900">{{ search }}</span>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center">
+                <i class="fas fa-history text-gray-400 mr-2"></i>
+                <span class="text-gray-900">{{ search }}</span>
+              </div>
+              <button
+                @click.stop="removeRecentSearch(index)"
+                class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-all duration-200"
+              >
+                <i class="fas fa-times text-sm"></i>
+              </button>
             </div>
           </div>
-        </div>
-
-        <div v-else class="text-center py-8 text-gray-500">
-          <i class="fas fa-search text-4xl mb-4 text-gray-300"></i>
-          <p>검색어를 입력해주세요</p>
         </div>
       </div>
     </div>
@@ -85,7 +91,7 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, nextTick, onMounted } from 'vue'
 
 const props = defineProps({
   isOpen: {
@@ -99,8 +105,33 @@ const emit = defineEmits(['close', 'search'])
 // Reactive data
 const searchQuery = ref('')
 const searchInputRef = ref(null)
-const searchResults = ref([])
-const recentSearches = ref(['강남구 아파트', '홍대역 근처', '신축 빌라'])
+const recentSearches = ref([])
+
+// 로컬 스토리지에서 최근 검색 불러오기
+const loadRecentSearches = () => {
+  try {
+    const saved = localStorage.getItem('recentSearches')
+    if (saved) {
+      recentSearches.value = JSON.parse(saved)
+    }
+  } catch (error) {
+    console.error('최근 검색 불러오기 실패:', error)
+  }
+}
+
+// 로컬 스토리지에 최근 검색 저장하기
+const saveRecentSearches = () => {
+  try {
+    localStorage.setItem('recentSearches', JSON.stringify(recentSearches.value))
+  } catch (error) {
+    console.error('최근 검색 저장 실패:', error)
+  }
+}
+
+// 컴포넌트 마운트 시 최근 검색 불러오기
+onMounted(() => {
+  loadRecentSearches()
+})
 
 // Methods
 const closeModal = () => {
@@ -118,6 +149,7 @@ const handleSearch = () => {
       if (recentSearches.value.length > 5) {
         recentSearches.value.pop()
       }
+      saveRecentSearches() // 최근 검색 저장
     }
 
     closeModal()
@@ -125,39 +157,27 @@ const handleSearch = () => {
 }
 
 const handleSearchInput = () => {
-  // 검색어 입력 시 검색 결과 시뮬레이션
-  if (searchQuery.value.trim()) {
-    searchResults.value = [
-      {
-        id: 1,
-        title: `${searchQuery.value} 관련 매물`,
-        description: '강남구, 신축, 3억 5천만원',
-      },
-      {
-        id: 2,
-        title: `${searchQuery.value} 근처 상가`,
-        description: '서초구, 1층, 월세 200만원',
-      },
-    ]
-  } else {
-    searchResults.value = []
-  }
+  // 검색어 입력 시 아무것도 하지 않음
+  // 실제 검색은 검색 버튼 클릭 시에만 실행
 }
 
 const clearSearch = () => {
   searchQuery.value = ''
-  searchResults.value = []
-}
-
-const selectResult = (result) => {
-  console.log('검색 결과 선택:', result)
-  emit('search', result.title)
-  closeModal()
 }
 
 const selectRecentSearch = (search) => {
   searchQuery.value = search
   handleSearch()
+}
+
+const removeRecentSearch = (index) => {
+  recentSearches.value.splice(index, 1)
+  saveRecentSearches()
+}
+
+const clearAllRecentSearches = () => {
+  recentSearches.value = []
+  saveRecentSearches()
 }
 
 // Watch for modal open to focus input
@@ -170,7 +190,6 @@ watch(
       })
     } else {
       searchQuery.value = ''
-      searchResults.value = []
     }
   }
 )

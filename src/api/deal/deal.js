@@ -1,8 +1,22 @@
 import api from '../axios'
 
+// 백엔드 서버 연결 상태 확인
+export const checkServerHealth = () => {
+  return api.get('/health')
+}
+
 // 거래 전체 목록 조회
 export const getDeals = () => {
-  return api.get('/deal/waitinglist')
+  console.log('getDeals 함수 호출됨')
+  console.log('/deal/waitinglist 엔드포인트 호출')
+
+  // Postman에서 작동하는 방식과 동일하게 설정
+  return api.get('/deal/waitinglist', {
+    headers: {
+      'Content-Type': 'application/json',
+      // Postman에서 사용한 헤더와 동일하게 설정
+    },
+  })
 }
 
 // 거래 생성
@@ -18,6 +32,11 @@ export const getDealDetail = (dealId) => {
 // 거래 상태 업데이트
 export const updateDealStatus = (dealId, status) => {
   return api.put(`/deals/${dealId}/status`, { status })
+}
+
+// 거래 상태 변경 (새로운 엔드포인트)
+export const changeDealStatus = (dealData) => {
+  return api.patch('/deal/status', dealData)
 }
 
 // 거래 취소
@@ -46,8 +65,8 @@ export const rateDeal = (dealId, rating) => {
 }
 
 // 거래전 안내 정보 조회
-export const getDealNotice = (buildingId) => {
-  return api.get(`/deal/notice/${buildingId}`)
+export const getDealNotice = (dealId) => {
+  return api.get(`/deal/notice/${dealId}`)
 }
 
 // 소비자 문서 다운로드 URL 조회

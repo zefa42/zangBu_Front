@@ -1,7 +1,8 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getPropertyDetail } from '@/api/property/property'
+import { getDealNotice, changeDealStatus } from '@/api/deal/deal'
+import { DEAL_STATUS } from '@/utils/constants'
 import Button from '@/components/common/Button.vue'
 import BackButton from '@/components/common/BackButton.vue'
 
@@ -29,12 +30,30 @@ const fetchPropertyInfo = async () => {
 
     // 실제 API 호출 시도
     try {
-      const response = await getPropertyDetail({ deal_id: dealId })
-      propertyInfo.value = response.data
+      const response = await getDealNotice(dealId)
+      console.log('거래 상세 정보 응답:', response.data)
+
+      // API 응답 구조에 맞게 데이터 매핑
+      propertyInfo.value = {
+        dealId: dealId,
+        buildingId: response.data.buildingId,
+        buildingName: response.data.buildingName,
+        infoBuilding: response.data.infoBuilding,
+      }
     } catch (apiError) {
-      console.warn('API 호출 실패, 더미데이터 사용:', apiError)
-      // API 호출 실패 시 더미데이터 사용
-      propertyInfo.value = getDummyPropertyData(dealId)
+      console.error('API 호출 실패:', apiError)
+
+      let errorMessage = '매물 정보를 불러올 수 없습니다.'
+
+      if (apiError.response?.status === 404) {
+        errorMessage = '해당 거래를 찾을 수 없습니다.'
+      } else if (apiError.response?.status === 403) {
+        errorMessage = '이 거래에 대한 접근 권한이 없습니다.'
+      } else if (apiError.response?.data?.message) {
+        errorMessage = apiError.response.data.message
+      }
+
+      error.value = errorMessage
     }
   } catch (err) {
     console.error('매물 정보 조회 실패:', err)
@@ -42,35 +61,6 @@ const fetchPropertyInfo = async () => {
   } finally {
     loading.value = false
   }
-}
-
-// 더미 매물 데이터 생성 함수
-const getDummyPropertyData = (dealId) => {
-  const dummyData = {
-    1: {
-      deal_id: '1',
-      building_id: '1',
-      building_name: '레미안 강남 아파트 101동 1001호',
-      info_building:
-        '서울시 강남구 역삼동에 위치한 아파트입니다. 2018년 건축, 총 1,234세대 규모의 대단지 아파트입니다.',
-    },
-    2: {
-      deal_id: '2',
-      building_id: '2',
-      building_name: '래미안 신촌 아파트 205동 1502호',
-      info_building:
-        '서울시 서대문구 신촌동에 위치한 아파트입니다. 2020년 건축, 총 856세대 규모의 중단지 아파트입니다.',
-    },
-    3: {
-      deal_id: '3',
-      building_id: '3',
-      building_name: '푸르지오 마포 아파트 301동 801호',
-      info_building:
-        '서울시 마포구 합정동에 위치한 아파트입니다. 2019년 건축, 총 1,567세대 규모의 대단지 아파트입니다.',
-    },
-  }
-
-  return dummyData[dealId] || dummyData['1']
 }
 
 // 서류 열람 함수들
@@ -81,7 +71,7 @@ const viewDocument = (type) => {
     .push({
       name: 'deal-consumer-document',
       params: {
-        dealId: propertyInfo.value.deal_id,
+        dealId: propertyInfo.value.dealId,
         type: type,
       },
     })
@@ -124,10 +114,55 @@ const startDeal = () => {
   }
   console.log('거래 시작')
   // 채팅 페이지로 이동
-  router.push(`/chat/room?dealId=${propertyInfo.value.deal_id}`).then(() => {
+  router.push(`/chat/room?dealId=${propertyInfo.value.dealId}`).then(() => {
     // 페이지 이동 후 스크롤을 맨 위로 초기화
     window.scrollTo(0, 0)
   })
+}
+
+// 거래 수락 함수
+const acceptDeal = async () => {
+  try {
+    if (!isChecklistComplete.value) {
+      alert('거래를 수락하기 전에 모든 체크리스트 항목을 확인해주세요.')
+      return
+    }
+
+    const dealData = {
+      dealId: propertyInfo.value.dealId,
+      status: DEAL_STATUS.BEFORE_CONSUMER,
+    }
+
+    console.log('거래 수락 요청 데이터:', dealData)
+    console.log('현재 토큰:', localStorage.getItem('token'))
+
+    const response = await changeDealStatus(dealData)
+    console.log('거래 수락 성공:', response.data)
+
+    // 성공 후 거래 시작 페이지로 이동
+    startDeal()
+  } catch (err) {
+    console.error('거래 수락 실패:', err)
+
+    // 더 자세한 에러 정보 출력
+    if (err.response) {
+      console.error('응답 상태:', err.response.status)
+      console.error('응답 데이터:', err.response.data)
+      console.error('응답 헤더:', err.response.headers)
+    }
+
+    let errorMessage = '거래 수락에 실패했습니다.'
+
+    if (err.response?.status === 403) {
+      errorMessage = '권한이 없습니다. 로그인 상태를 확인해주세요.'
+    } else if (err.response?.status === 401) {
+      errorMessage = '인증이 필요합니다. 다시 로그인해주세요.'
+    } else if (err.response?.data?.message) {
+      errorMessage = err.response.data.message
+    }
+
+    alert(errorMessage)
+  }
 }
 
 const cancelDeal = () => {
@@ -137,7 +172,7 @@ const cancelDeal = () => {
 const confirmCancel = () => {
   showCancelModal.value = false
   // 실제로는 API 호출하여 거래 취소 처리
-  console.log('거래 취소 처리:', propertyInfo.value.deal_id)
+  console.log('거래 취소 처리:', propertyInfo.value.dealId)
   // 성공 후 이전 페이지로 이동
   router.go(-1).then(() => {
     // 페이지 이동 후 스크롤을 맨 위로 초기화
@@ -223,10 +258,10 @@ onMounted(() => {
                   >
                 </div>
                 <h1 class="text-xl lg:text-3xl font-bold mb-2 lg:mb-3" style="color: var(--text-2)">
-                  {{ propertyInfo.building_name }}
+                  {{ propertyInfo.buildingName }}
                 </h1>
                 <p class="text-xs lg:text-base mb-2 leading-relaxed" style="color: var(--text-1)">
-                  {{ propertyInfo.info_building }}
+                  {{ propertyInfo.infoBuilding }}
                 </p>
               </div>
               <div class="hidden lg:block">
@@ -511,7 +546,7 @@ onMounted(() => {
                     취소하기
                   </button>
                   <button
-                    @click="startDeal"
+                    @click="acceptDeal"
                     :disabled="!isChecklistComplete"
                     :class="[
                       'w-full sm:w-48 py-3 lg:py-4 px-6 lg:px-8 rounded-lg font-semibold flex items-center justify-center gap-2 lg:gap-3 transition-colors text-base lg:text-lg',

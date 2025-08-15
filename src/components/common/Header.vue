@@ -162,7 +162,7 @@
           </button>
           <button
             @click="isLoggedIn ? handleNavigation('mypage') : handleNavigation('login')"
-            class="flex items-center gap-1 h-full hover:opacity-80 transition-opacity"
+            class="lg:hidden flex items-center gap-1 h-full hover:opacity-80 transition-opacity"
           >
             <div
               :class="[
@@ -222,13 +222,6 @@
             >
               {{ notificationStore.unreadCount > 99 ? '99+' : notificationStore.unreadCount }}
             </span>
-          </button>
-          <button
-            v-if="isLoggedIn"
-            @click="handleLogout"
-            class="text-brand-1 text-xs font-semibold font-inter border border-brand-2 rounded px-2 py-1 hover:bg-brand-2 hover:text-white transition-colors whitespace-nowrap flex-shrink-0 h-full items-center"
-          >
-            로그아웃
           </button>
 
           <!-- Hamburger Menu Button -->

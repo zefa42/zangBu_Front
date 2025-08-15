@@ -1,9 +1,7 @@
 <template>
   <footer class="bg-bg-2 border-t border-bg-1 py-8 w-full lg:py-6 sm:py-4">
     <div class="max-w-6xl mx-auto px-4 lg:px-3 sm:px-2">
-      <!-- 회사 정보 섹션 -->
       <div class="mb-6 lg:mb-4 sm:mb-4 text-center">
-        <!-- 모바일: 한 줄씩 표시 -->
         <div class="app:block desktop:hidden">
           <div class="mb-2">
             <span class="text-text-2 font-medium">상호 : </span>
@@ -26,8 +24,6 @@
             <span class="text-text-1">제2029-서울광진-78875호</span>
           </div>
         </div>
-
-        <!-- 데스크톱: 여러 정보를 한 줄에 표시 -->
         <div class="hidden desktop:block">
           <div class="mb-2">
             <span class="text-text-2 font-medium">상호:</span>
@@ -47,10 +43,7 @@
           </div>
         </div>
       </div>
-
-      <!-- 연락처 정보 섹션 -->
       <div class="mb-6 lg:mb-4 sm:mb-4 text-center">
-        <!-- 모바일: 한 줄씩 표시 -->
         <div class="app:block desktop:hidden">
           <div class="mb-2">
             <span class="text-text-2 font-medium">이메일 : </span>
@@ -69,8 +62,6 @@
             <span class="text-text-1">02-999-1234</span>
           </div>
         </div>
-
-        <!-- 데스크톱: 여러 정보를 한 줄에 표시 -->
         <div class="hidden desktop:block">
           <div class="mb-2">
             <span class="text-text-2 font-medium">이메일:</span>
@@ -84,8 +75,6 @@
           </div>
         </div>
       </div>
-
-      <!-- 저작권 정보 -->
       <div class="mt-6 pt-4 border-t border-bg-1 text-text-1 text-sm lg:mt-4 sm:mt-4 text-center">
         <span>Copyright © ZANGBU. All Rights Reserved.</span>
       </div>
@@ -93,8 +82,6 @@
   </footer>
 </template>
 
-<script>
-export default {
-  name: 'Footer',
-}
+<script setup>
+// Footer component
 </script>

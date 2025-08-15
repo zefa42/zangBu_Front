@@ -31,6 +31,7 @@ import {
   cancelPropertyNotification,
 } from '@/api/property/property.js'
 import { useMembership } from '@/composables/useMembership'
+import PriceChart from '@/components/PriceChart.vue'
 
 // Props 정의
 const props = defineProps({
@@ -1123,50 +1124,17 @@ onMounted(() => {
               <span class="section-icon">📈</span>
               시세 그래프
             </h3>
-            <div class="graph-controls">
-              <select class="graph-select">
-                <option>매매</option>
-              </select>
-              <select class="graph-select">
-                <option>전월세</option>
-              </select>
-              <select class="graph-select">
-                <option>32평</option>
-              </select>
-              <select class="graph-select">
-                <option>최근 3년</option>
-              </select>
-            </div>
-            <div class="graph-placeholder">
-              <div class="graph-area">
-                <div class="graph-line"></div>
-                <div class="graph-labels">
-                  <span>01</span>
-                  <span>03</span>
-                  <span>06</span>
-                  <span>09</span>
-                  <span>12</span>
-                  <span>15</span>
-                  <span>18</span>
-                </div>
-              </div>
-              <div class="price-info">
-                <div class="current-price">
-                  <span class="price-label"
-                    >현재 {{ selectedProperty.resType || '매매' }} 시세</span
-                  >
-                  <span class="price-value">
-                    {{
-                      selectedProperty.resAreaPriceList?.[0]?.resLowerAveragePrice ||
-                      generatePropertyInfo(selectedProperty)
-                    }}
-                  </span>
-                </div>
-                <div class="price-change">
-                  <span class="change-label">전월 대비</span>
-                  <span class="change-value positive">+0.4억</span>
-                </div>
-              </div>
+
+            <!-- 실제 시세 데이터 차트 -->
+            <PriceChart
+              v-if="selectedProperty && selectedProperty.buildingId"
+              :buildingId="selectedProperty.buildingId"
+            />
+
+            <!-- 시세 데이터가 없을 때 표시할 내용 -->
+            <div v-else class="no-price-data">
+              <p>시세 데이터를 불러올 수 없습니다.</p>
+              <p>매물 ID: {{ selectedProperty?.buildingId || 'N/A' }}</p>
             </div>
           </div>
 
@@ -2152,12 +2120,22 @@ onMounted(() => {
   transform: translateY(-1px);
 }
 
-.btn-icon {
-  font-size: 16px;
+.no-price-data {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin: 20px 0;
 }
 
-.btn-text {
+.no-price-data p {
+  margin: 5px 0;
   font-size: 14px;
+}
+
+.btn-icon {
+  font-size: 16px;
 }
 
 @media (max-width: 768px) {

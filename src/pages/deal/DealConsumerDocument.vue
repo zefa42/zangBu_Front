@@ -53,6 +53,26 @@
                 {{ documentTypeLabel }}
               </span>
               <button
+                @click="openOfficialDocument"
+                class="inline-flex items-center px-3 py-1.5 border border-blue-300 text-xs font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                  />
+                </svg>
+                공식서류 열람
+              </button>
+              <button
                 @click="downloadPdf"
                 class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
@@ -161,6 +181,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getConsumerDocumentUrl } from '@/api/deal/deal'
+import { DOCUMENT_TYPE } from '@/utils/constants'
 import BackButton from '@/components/common/BackButton.vue'
 
 export default {
@@ -192,6 +213,15 @@ export default {
       return `${documentTypeLabel.value} 문서`
     })
 
+    // API 요청용 type 매핑
+    const apiType = computed(() => {
+      const typeMap = {
+        register: DOCUMENT_TYPE.ESTATE,
+        building: DOCUMENT_TYPE.BUILDING_REGISTER,
+      }
+      return typeMap[documentType.value] || documentType.value
+    })
+
     // 더미 PDF URL 생성 함수
     const getDummyPdfUrl = (type) => {
       const dummyPdfBase64 =
@@ -220,7 +250,7 @@ export default {
 
         // 실제 API 호출 시도
         try {
-          const response = await getConsumerDocumentUrl(dealId.value, documentType.value)
+          const response = await getConsumerDocumentUrl(dealId.value, apiType.value)
           const originalUrl = response.data.url
 
           if (!originalUrl) {
@@ -239,6 +269,29 @@ export default {
         console.error('문서 로드 오류:', err)
         error.value =
           err.response?.data?.message || err.message || '문서를 불러오는 중 오류가 발생했습니다.'
+      } finally {
+        loading.value = false
+      }
+    }
+
+    const openOfficialDocument = async () => {
+      try {
+        loading.value = true
+        error.value = null
+
+        // 공식서류 열람 API 호출
+        const response = await getConsumerDocumentUrl(dealId.value, apiType.value)
+        const originalUrl = response.data.url
+
+        if (!originalUrl) {
+          throw new Error('공식서류 URL을 받지 못했습니다.')
+        }
+
+        // 새 창에서 공식서류 열기
+        window.open(originalUrl, '_blank', 'noopener,noreferrer')
+      } catch (err) {
+        console.error('공식서류 열람 오류:', err)
+        error.value = err.response?.data?.message || err.message || '공식서류를 열람할 수 없습니다.'
       } finally {
         loading.value = false
       }
@@ -282,6 +335,7 @@ export default {
       documentTypeLabel,
       documentTitle,
       loadDocument,
+      openOfficialDocument,
       downloadPdf,
       zoomIn,
       zoomOut,
