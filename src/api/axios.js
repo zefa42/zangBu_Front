@@ -152,4 +152,82 @@ api.interceptors.response.use(
   }
 )
 
+// API 요청 헬퍼 함수들
+export const apiHelpers = {
+  // GET 요청 헬퍼
+  get: (url, config = {}) => api.get(url, config),
+
+  // POST 요청 헬퍼
+  post: (url, data = {}, config = {}) => api.post(url, data, config),
+
+  // PUT 요청 헬퍼
+  put: (url, data = {}, config = {}) => api.put(url, data, config),
+
+  // DELETE 요청 헬퍼
+  delete: (url, config = {}) => api.delete(url, config),
+
+  // PATCH 요청 헬퍼
+  patch: (url, data = {}, config = {}) => api.patch(url, data, config),
+}
+
+// 에러 처리 헬퍼
+export const handleApiError = (error) => {
+  if (error.response) {
+    // 서버 응답이 있는 경우
+    const { status, data } = error.response
+    console.error(`API Error ${status}:`, data)
+
+    switch (status) {
+      case 400:
+        return { message: data.message || '잘못된 요청입니다.', status }
+      case 401:
+        return { message: '인증이 필요합니다.', status }
+      case 403:
+        return { message: '접근 권한이 없습니다.', status }
+      case 404:
+        return { message: '요청한 리소스를 찾을 수 없습니다.', status }
+      case 500:
+        return { message: '서버 오류가 발생했습니다.', status }
+      default:
+        return { message: data.message || '알 수 없는 오류가 발생했습니다.', status }
+    }
+  } else if (error.request) {
+    // 요청은 보냈지만 응답을 받지 못한 경우
+    console.error('Network Error:', error.request)
+    return { message: '네트워크 연결을 확인해주세요.', status: 0 }
+  } else {
+    // 요청 자체를 보내지 못한 경우
+    console.error('Request Error:', error.message)
+    return { message: '요청을 처리할 수 없습니다.', status: 0 }
+  }
+}
+
+// 로딩 상태 관리를 위한 헬퍼
+export const createLoadingState = () => {
+  const loading = ref(false)
+  const error = ref(null)
+
+  const executeRequest = async (requestFn) => {
+    try {
+      loading.value = true
+      error.value = null
+      const result = await requestFn()
+      return result
+    } catch (err) {
+      const errorInfo = handleApiError(err)
+      error.value = errorInfo
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  return {
+    loading: readonly(loading),
+    error: readonly(error),
+    executeRequest,
+    clearError: () => error.value = null
+  }
+}
+
 export default api

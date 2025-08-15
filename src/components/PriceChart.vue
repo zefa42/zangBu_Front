@@ -174,9 +174,6 @@ const createChart = () => {
 // 차트 업데이트
 const updateChart = async () => {
   try {
-    loading.value = true
-    error.value = null
-
     await priceStore.fetchPriceHistory(props.buildingId, parseInt(selectedPeriod.value))
 
     if (chart.value) {
@@ -185,9 +182,8 @@ const updateChart = async () => {
       chart.value.update()
     }
   } catch (err) {
-    error.value = err.message || '차트 업데이트에 실패했습니다.'
-  } finally {
-    loading.value = false
+    // 에러는 priceStore에서 이미 처리됨
+    console.error('차트 업데이트 실패:', err)
   }
 }
 
@@ -197,7 +193,8 @@ onMounted(async () => {
     await priceStore.fetchPriceHistory(props.buildingId, parseInt(selectedPeriod.value))
     createChart()
   } catch (err) {
-    error.value = err.message || '시세 데이터를 불러오는데 실패했습니다.'
+    // 에러는 priceStore에서 이미 처리됨
+    console.error('시세 데이터 로드 실패:', err)
   }
 })
 
@@ -273,4 +270,3 @@ watch(
   color: #999;
 }
 </style>
-
