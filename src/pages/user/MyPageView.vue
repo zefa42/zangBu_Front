@@ -68,6 +68,38 @@ async function handleLogout() {
   }
 }
 
+/* ===== 초본 조회 ===== */
+async function handleRegistryLookup() {
+  try {
+    // API 요청 보내기
+    const response = await fetch('/api/address-changes/import', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authStore.accessToken || localStorage.getItem('token')}`,
+      },
+    })
+
+    if (response.ok) {
+      const data = await response.json()
+      console.log('초본 조회 응답:', data)
+
+      // 응답 데이터에서 텍스트로 "true"가 있는지 확인
+      const responseText = JSON.stringify(data).toLowerCase()
+      if (responseText.includes('"true"') || responseText.includes('true')) {
+        alert('성공했습니다')
+      } else {
+        alert('초본 조회 요청이 처리되었지만 결과를 확인해주세요.')
+      }
+    } else {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+  } catch (error) {
+    console.error('초본 조회 실패:', error)
+    alert('초본 조회에 실패했습니다. 다시 시도해주세요.')
+  }
+}
+
 /* ===== 내가 등록한 매물 (더미) -> PropertyCard 스키마로 맵핑 =====
 PropertyCard는 snake_case를 기대하므로 아래 형태로 맞춤
 */
@@ -244,6 +276,9 @@ async function handleMyPropertyDelete(property) {
         <i class="fa-solid fa-right-from-bracket mr-2"></i>
         {{ isLoggingOut ? '로그아웃 중...' : '로그아웃' }}
       </button>
+      <button class="registry-lookup-button" @click="handleRegistryLookup">
+        <i class="fa-solid fa-file-text mr-2"></i>초본 조회
+      </button>
       <router-link to="/user/withdraw" class="secondary-button">
         <i class="fa-solid fa-trash-can mr-2"></i>계정 삭제
       </router-link>
@@ -407,5 +442,24 @@ async function handleMyPropertyDelete(property) {
 
 .secondary-button:hover {
   background: #fef2f2;
+}
+
+.registry-lookup-button {
+  height: 40px;
+  padding: 0 20px;
+  border-radius: 8px;
+  border: 2px solid var(--brand-3);
+  background: var(--bg-2);
+  cursor: pointer;
+  color: var(--brand-3);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.2s ease;
+}
+
+.registry-lookup-button:hover {
+  background: var(--brand-3);
+  color: var(--text-3);
 }
 </style>
