@@ -175,7 +175,7 @@ export default {
     const pdfUrl = ref(null)
     const downloadLoading = ref(false)
 
-    const dealId = computed(() => route.params.dealId)
+    const buildingId = computed(() => route.params.buildingId) // 라우터에서 buildingId로 받음
     const documentType = computed(() => route.params.type)
 
     const documentTypeLabel = computed(() => {
@@ -254,14 +254,23 @@ export default {
     const getSecurePdfUrl = (url) => {
       if (!url) return url
 
-      // Data URL인 경우 파라미터 추가
-      if (url.startsWith('data:')) {
-        return `${url}#toolbar=0&navpanes=0&scrollbar=0&statusbar=0&messages=0&scrollbar=0&toolbar=0&navpanes=0&scrollbar=0&statusbar=0&messages=0&view=FitH`
+      // 서명된 URL인 경우 (이미 쿼리 파라미터가 있음)
+      if (url.includes('X-Amz-Signature')) {
+        return `${url}#toolbar=0&navpanes=0&scrollbar=0&statusbar=0&messages=0&view=FitH`
       }
 
-      // 외부 URL인 경우 파라미터 추가
-      const separator = url.includes('?') ? '&' : '?'
-      return `${url}${separator}#toolbar=0&navpanes=0&scrollbar=0&statusbar=0&messages=0&view=FitH`
+      // 일반 HTTP URL인 경우 파라미터 추가
+      if (url.startsWith('http')) {
+        const separator = url.includes('?') ? '&' : '?'
+        return `${url}${separator}#toolbar=0&navpanes=0&scrollbar=0&statusbar=0&messages=0&view=FitH`
+      }
+
+      // Data URL인 경우 파라미터 추가
+      if (url.startsWith('data:')) {
+        return `${url}#toolbar=0&navpanes=0&scrollbar=0&statusbar=0&messages=0&view=FitH`
+      }
+
+      return url
     }
 
     const loadDocument = async () => {
@@ -271,7 +280,7 @@ export default {
 
         // 실제 API 호출 시도
         try {
-          const response = await getConsumerDocumentUrl(dealId.value, apiType.value)
+          const response = await getConsumerDocumentUrl(buildingId.value, apiType.value)
           const originalUrl = response.data.url
 
           if (!originalUrl) {
@@ -292,16 +301,9 @@ export default {
 
             console.log('NCP 요청 정보:', { bucketName, objectName })
 
-            // NCP에서 문서 blob 가져오기
-            const documentBlob = await getObject(bucketName, objectName)
-
-            // Blob을 data URL로 변환
-            const reader = new FileReader()
-            reader.onload = () => {
-              const dataUrl = reader.result
-              pdfUrl.value = getSecurePdfUrl(dataUrl)
-            }
-            reader.readAsDataURL(documentBlob)
+            // 서명된 URL 생성하여 CORS 우회
+            const signedUrl = createSignedUrl(bucketName, objectName)
+            pdfUrl.value = getSecurePdfUrl(signedUrl)
           } catch (ncpError) {
             console.warn('NCP 요청 실패, 원본 URL 사용')
             // NCP 실패 시 원본 URL 사용
@@ -323,16 +325,9 @@ export default {
             // 더미 URL도 NCP를 통해 가져오기
             const { bucketName, objectName } = parseNcpUrl(dummyUrl)
 
-            // NCP에서 문서 blob 가져오기
-            const documentBlob = await getObject(bucketName, objectName)
-
-            // Blob을 data URL로 변환
-            const reader = new FileReader()
-            reader.onload = () => {
-              const dataUrl = reader.result
-              pdfUrl.value = getSecurePdfUrl(dataUrl)
-            }
-            reader.readAsDataURL(documentBlob)
+            // 서명된 URL 생성하여 CORS 우회
+            const signedUrl = createSignedUrl(bucketName, objectName)
+            pdfUrl.value = getSecurePdfUrl(signedUrl)
           } catch (ncpError) {
             console.warn('더미 PDF NCP 요청 실패, 원본 URL 사용')
             // NCP 실패 시 원본 URL 사용
@@ -355,7 +350,7 @@ export default {
 
         // API 호출 시도
         try {
-          const response = await refreshConsumerDocument(dealId.value, apiType.value)
+          const response = await refreshConsumerDocument(buildingId.value, apiType.value)
           const originalUrl = response.data.url
 
           if (!originalUrl) {
@@ -374,16 +369,9 @@ export default {
             // URL에서 bucket과 object name 추출
             const { bucketName, objectName } = parseNcpUrl(originalUrl)
 
-            // NCP에서 문서 blob 가져오기
-            const documentBlob = await getObject(bucketName, objectName)
-
-            // Blob을 data URL로 변환
-            const reader = new FileReader()
-            reader.onload = () => {
-              const dataUrl = reader.result
-              pdfUrl.value = getSecurePdfUrl(dataUrl)
-            }
-            reader.readAsDataURL(documentBlob)
+            // 서명된 URL 생성하여 CORS 우회
+            const signedUrl = createSignedUrl(bucketName, objectName)
+            pdfUrl.value = getSecurePdfUrl(signedUrl)
           } catch (ncpError) {
             console.warn('NCP 새로고침 요청 실패, 원본 URL 사용')
             // NCP 실패 시 원본 URL 사용
@@ -405,16 +393,9 @@ export default {
             // 더미 URL도 NCP를 통해 가져오기
             const { bucketName, objectName } = parseNcpUrl(dummyUrl)
 
-            // NCP에서 문서 blob 가져오기
-            const documentBlob = await getObject(bucketName, objectName)
-
-            // Blob을 data URL로 변환
-            const reader = new FileReader()
-            reader.onload = () => {
-              const dataUrl = reader.result
-              pdfUrl.value = getSecurePdfUrl(dataUrl)
-            }
-            reader.readAsDataURL(documentBlob)
+            // 서명된 URL 생성하여 CORS 우회
+            const signedUrl = createSignedUrl(bucketName, objectName)
+            pdfUrl.value = getSecurePdfUrl(signedUrl)
           } catch (ncpError) {
             console.warn('더미 PDF NCP 요청 실패, 원본 URL 사용')
             // NCP 실패 시 원본 URL 사용
@@ -441,20 +422,32 @@ export default {
       downloadLoading.value = true
 
       try {
-        // Data URL인 경우 (NCP에서 가져온 경우)
-        if (pdfUrl.value.startsWith('data:')) {
+        // 서명된 URL인 경우 (NCP에서 생성된 경우)
+        if (pdfUrl.value.includes('X-Amz-Signature')) {
+          // fetch로 파일을 가져와서 다운로드
+          const response = await fetch(pdfUrl.value)
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+          }
+
+          const blob = await response.blob()
+          const url = window.URL.createObjectURL(blob)
+
           const link = document.createElement('a')
-          link.href = pdfUrl.value
-          link.download = `${documentTypeLabel.value}_${dealId.value}.pdf`
+          link.href = url
+          link.download = `${documentTypeLabel.value}_${buildingId.value}.pdf`
           link.style.display = 'none'
           document.body.appendChild(link)
           link.click()
           document.body.removeChild(link)
-          console.log('다운로드 완료 (Data URL)')
+
+          // Blob URL 정리
+          window.URL.revokeObjectURL(url)
+          console.log('다운로드 완료 (서명된 URL)')
           return
         }
 
-        // 외부 URL인 경우 (NCP 실패로 원본 URL 사용하는 경우)
+        // 일반 HTTP URL인 경우
         if (pdfUrl.value.startsWith('http')) {
           // fetch로 파일을 가져와서 다운로드
           const response = await fetch(pdfUrl.value)
@@ -467,7 +460,7 @@ export default {
 
           const link = document.createElement('a')
           link.href = url
-          link.download = `${documentTypeLabel.value}_${dealId.value}.pdf`
+          link.download = `${documentTypeLabel.value}_${buildingId.value}.pdf`
           link.style.display = 'none'
           document.body.appendChild(link)
           link.click()
@@ -497,7 +490,7 @@ export default {
       loading,
       error,
       pdfUrl,
-      dealId,
+      buildingId,
       documentType,
       documentTypeLabel,
       documentTitle,

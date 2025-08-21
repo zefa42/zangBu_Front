@@ -43,7 +43,6 @@ export const useChatStore = defineStore('chat', () => {
   const authStore = useAuthStore()
   const myUserEmail = computed(() => authStore.user?.email || '')
   const myUserId = ref('')
-
   // 이메일이 변경될 때마다 userId 업데이트
   watch(
     myUserEmail,

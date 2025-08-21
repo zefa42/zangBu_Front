@@ -573,21 +573,21 @@ const acceptDeal = () => {
 const confirmAccept = async () => {
   showAcceptModal.value = false
 
-  const dealId = propertyInfo.value.dealId
+  const buildingId = propertyInfo.value.buildingId
   const roomId = propertyInfo.value.chatRoomId
 
   if (!roomId) {
     alert('chatRoomId가 없습니다.')
     return
   }
-  if (!dealId) {
-    alert('dealId가 없습니다.')
+  if (!buildingId) {
+    alert('buildingId가 없습니다.')
     return
   }
 
   try {
     const dto = {
-      dealId,
+      dealId: buildingId,
       chatRoomId: roomId,
       status: DEAL_STATUS.BEFORE_CONSUMER,
     } // 판매자 수락 - 소비자 확인 대기 상태로 변경
@@ -617,7 +617,7 @@ const cancelDeal = () => {
 const confirmCancel = () => {
   showCancelModal.value = false
   // 실제로는 API 호출하여 거래 취소 처리
-  console.log('거래 취소 처리:', propertyInfo.value.dealId)
+  console.log('거래 취소 처리:', propertyInfo.value.buildingId)
   // 성공 후 이전 페이지로 이동
   router.go(-1)
 }
@@ -650,10 +650,10 @@ onMounted(() => {
 watch(
   () => propertyInfo.value,
   async (newVal) => {
-    if (newVal?.dealId && newVal?.chatRoomId) {
+    if (newVal?.buildingId && newVal?.chatRoomId) {
       try {
         await changeDealStatus({
-          dealId: newVal.dealId,
+          dealId: newVal.buildingId,
           chatRoomId: newVal.chatRoomId,
           status: DEAL_STATUS.BEFORE_OWNER,
         })

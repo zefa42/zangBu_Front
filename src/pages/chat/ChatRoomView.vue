@@ -103,10 +103,14 @@
         />
       </header>
       <!-- 채팅 내용 -->
-      <main ref="scrollArea" class="flex-1 overflow-y-auto px-4 py-3 space-y-4" @scroll="onScroll">
+      <main
+        ref="scrollArea"
+        class="h-[65vh] overflow-y-auto px-4 py-2 space-y-2"
+        @scroll="onScroll"
+      >
         <div v-for="(msg, index) in viewMessages" :key="index" class="flex flex-col">
           <!-- 시스템 메시지: 가운데 회색 배지 -->
-          <div v-if="msg.isSystem" class="self-center my-1">
+          <div v-if="msg.isSystem" class="self-center my-0.5">
             <span class="text-[10px] md:text-xs px-2 py-1 rounded bg-gray-100 text-gray-500">
               {{ msg.message }}
             </span>
@@ -118,7 +122,7 @@
                 msg.isMine
                   ? 'self-end bg-[var(--brand-4)] text-gray-800'
                   : 'self-start bg-[var(--brand-5)] border text-gray-800',
-                'rounded-lg px-3 py-2 max-w-xs text-sm',
+                'rounded-lg px-3 py-2 max-w-xs text-sm leading-tight',
               ]"
             >
               <p>{{ msg.message }}</p>

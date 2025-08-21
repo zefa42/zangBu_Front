@@ -34,18 +34,23 @@ export const getDealGuide = () => {
 }
 
 // 거래전 안내 정보 조회
+export const getDealNoticeBefore = (buildingId) => {
+  return api.get(`/deal/notice/before/${buildingId}`)
+}
+
+// 거래전 안내 정보 조회
 export const getDealNotice = (dealId) => {
   return api.get(`/deal/notice/${dealId}`)
 }
 
 // 소비자 문서 다운로드 URL 조회
-export const getConsumerDocumentUrl = (dealId, type) => {
-  return api.get(`/deal/consumer/documents/${dealId}/${type}/download`)
+export const getConsumerDocumentUrl = (buildingId, type) => {
+  return api.get(`/deal/consumer/documents/${buildingId}/${type}/download`)
 }
 
 // 소비자 문서 새로고침
 export const refreshConsumerDocument = (buildingId, type) => {
-  return api.post(`/consumer/documents/${buildingId}/${type}/refresh`, {})
+  return api.post(`/deal/consumer/documents/${buildingId}/${type}/refresh`, {})
 }
 
 // 표준 계약서 다운로드

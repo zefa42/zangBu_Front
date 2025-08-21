@@ -35,7 +35,7 @@
       <h3 class="property-title">{{ property.buildingName || '스카이빌' }}</h3>
 
       <div class="price-info">
-        <span class="price-text">{{ property.price || '750,000,000' }}</span>
+        <span class="price-text">{{ formatPrice(property.price) || '7억 5천만원' }}</span>
       </div>
 
       <div class="location-info">
@@ -227,6 +227,33 @@ watch(
     processImageUrl()
   }
 )
+
+// ===== 가격 포맷팅 =====
+
+// 가격을 만원/억 단위로 포맷팅
+const formatPrice = (price) => {
+  if (!price) return null
+
+  // 숫자로 변환 (문자열 제거)
+  const numPrice = parseInt(price.toString().replace(/[^\d]/g, ''))
+
+  if (isNaN(numPrice)) return null
+
+  // 억 단위로 변환
+  if (numPrice >= 10000) {
+    const billion = Math.floor(numPrice / 10000)
+    const million = numPrice % 10000
+
+    if (million === 0) {
+      return `${billion}억원`
+    } else {
+      return `${billion}억 ${million}만원`
+    }
+  } else {
+    // 만원 단위
+    return `${numPrice}만원`
+  }
+}
 
 // ===== 버튼 활성화/비활성화 상태 =====
 

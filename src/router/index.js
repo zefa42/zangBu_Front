@@ -223,7 +223,7 @@ const router = createRouter({
     },
     // 소비자 문서 조회
     {
-      path: '/deal/consumer/documents/:dealId/:type',
+      path: '/deal/consumer/documents/:buildingId/:type',
       name: 'deal-consumer-document',
       component: DealConsumerDocument,
       props: true,

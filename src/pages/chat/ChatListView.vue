@@ -112,7 +112,7 @@
                     <i class="fa-solid fa-house"></i>
                     {{ room.buildingName }} |
                     <i class="fa-solid fa-sack-dollar"></i>
-                    전세 {{ room.price }}억
+                    전세 {{ room.price }}
                   </div>
                 </div>
 

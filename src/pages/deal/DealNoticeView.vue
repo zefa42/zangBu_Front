@@ -85,10 +85,10 @@
                   >
                 </div>
                 <h1 class="text-xl lg:text-3xl font-bold mb-2 lg:mb-3" style="color: var(--text-2)">
-                  {{ dealNotice.building_name }}
+                  {{ dealNotice.buildingName }}
                 </h1>
                 <p class="text-xs lg:text-base mb-2 leading-relaxed" style="color: var(--text-1)">
-                  {{ dealNotice.info_building }}
+                  {{ dealNotice.infoBuilding }}
                 </p>
               </div>
               <div class="hidden lg:block">
@@ -387,9 +387,10 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getDealNotice } from '@/api/deal/deal'
+import { getDealNoticeBefore } from '@/api/deal/deal'
 import { useChatStore } from '@/stores/chat/chat'
 import { useAuthStore } from '@/stores/auth/auth'
+import { changeDealStatus } from '@/api/deal/deal'
 import axios from 'axios'
 
 const route = useRoute()
@@ -418,8 +419,9 @@ const fetchDealNotice = async () => {
 
     // 실제 API 호출 시도
     try {
-      const response = await getDealNotice(buildingId)
+      const response = await getDealNoticeBefore(buildingId)
       dealNotice.value = response.data
+      console.log('거래전 안내 정보:', dealNotice.value)
       isUsingDummyData.value = false
     } catch (apiError) {
       console.warn('API 호출 실패, 더미데이터 사용:', apiError)
@@ -493,6 +495,14 @@ const startChat = async () => {
     }
     chatRoomId = chatRoom.chatRoomId
     const dealId = await createDeal(chatRoomId)
+    //상태 변경
+    // 거래 상태를 BEFORE_OWNER로 변경
+    await changeDealStatus({
+      chatRoomId: chatRoomId,
+      dealId: dealId,
+      status: 'BEFORE_OWNER',
+    })
+
     // 채팅방 생성 후 채팅방으로 이동
     router.push({ name: 'chat-room', params: { roomId: chatRoom.chatRoomId } })
   } catch (err) {
