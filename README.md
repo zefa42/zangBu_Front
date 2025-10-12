@@ -1,35 +1,77 @@
-# zangBu_front
+# 역할
+**1. 카카오맵 API 기반 매물 지도 시스템 구현**
 
-This template should help get you started developing with Vue 3 in Vite.
 
-## Recommended IDE Setup
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+**기능 설명:**
 
-## Customize configuration
+- 카카오맵 API를 활용하여 DB에 저장된 부동산 매물을 지도 위에 마커로 시각화
+    - https://apis.map.kakao.com/web/sample/basicMarker/
+- 사용자 경험을 향상시키기 위한 다양한 필터링 및 검색 기능 제공
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+**주요 구현 사항:**
 
-## Project Setup
+- **Geocoder를 활용한 주소 → 좌표 변환 처리**
+    - 주소 정보를 카카오맵 좌표로 변환하여 정확한 위치에 마커 표시
+- **마커 클릭 이벤트를 통한 매물 상세 정보 표시**
+    - 마커 클릭 시 매물명, 가격, 면적, 거래 유형 등 상세 정보 사이드바 표시
+- **다중 필터링 기능 구현**
+    - 매물 유형: 아파트, 오피스텔, 주택, 빌라
+    - 필터 변경 시 서버 API 호출 및 동적 마커 갱신
 
-```sh
-npm install
-```
+**기술적 성과:**
 
-### Compile and Hot-Reload for Development
+- Vue 3 Composition API를 활용한 컴포넌트 설계로 재사용성 극대화
+- 반응형 디자인 적용으로 모바일/데스크톱 환경 지원
+- Pinia 스토어를 활용한 지도 상태 관리 (필터, 검색 쿼리, 매물 리스트)
 
-```sh
-npm run dev
-```
+**2. TossPay 샌드박스 결제 시스템 연동 및 리뷰 시스템 구축**
 
-### Compile and Minify for Production
 
-```sh
-npm run build
-```
+**기능 설명:**
 
-### Lint with [ESLint](https://eslint.org/)
+- TossPay 결제 API를 연동하여 리뷰 열람 건당 결제 및 멤버십 서비스 구현
+    - https://developers.tosspayments.com/sandbox
+- 결제 플로우 전체 관리 (결제 요청 → 승인 → 검증 → 완료/실패 처리)
 
-```sh
-npm run lint
-```
+**주요 구현 사항:**
+
+**결제 파이프라인**
+
+1. 사용자 정보 자동 로드 (/auth/me API 호출)
+2. 결제 옵션 선택 및 결제 확인 페이지 이동
+3. TossPay 결제창 호출 및 결제 승인 요청
+4. 서버 측 결제 검증 (/payment/confirm API)
+5. 결제 성공 시 멤버십/크레딧 부여
+6. 결제 내역 저장 및 사용자에게 결과 안내
+
+**에러 처리**
+
+- 결제 실패 시 에러 메시지 표시
+
+**기술적 성과:**
+
+- RESTful API 설계를 통한 결제 상태 관리 (/payment/status, /payment/history)
+- LocalStorage를 활용한 결제 컨텍스트 임시 저장으로 페이지 리디렉션 처리
+- 결제 성공/실패에 따른 동적 라우팅 및 사용자 피드백 제공
+
+**3. CODEF API 기반 매물 상세 정보 조회 시스템**
+
+
+**기능 설명:**
+
+- CODEF API를 활용하여 부동산 매물의 상세 정보를 외부 데이터베이스에서 실시간으로 조회
+- 건물 일련번호를 통한 정확한 매물 정보 확인 및 보안문자 인증 처리
+
+**주요 구현 사항:**
+
+- **건물 일련번호 조회 기능**
+    - 시/도, 시/군/구, 동, 건물명을 입력받아 고유 건물 일련번호(complexNo) 조회
+    - 조회된 일련번호를 기반으로 매물 상세 정보 연동
+- **buildingId 기반 단지 정보 조회**
+    - 내부 buildingId를 통해 CODEF API와 연동하여 단지 상세 정보 불러오기
+    - 조회된 정보를 지도 매물 상세보기 사이드바에 표시
+
+**기술적 성과:**
+
+- 에러 핸들링 및 사용자 피드백 메시지 제공 (200/404/500 상태 코드별 처리)
